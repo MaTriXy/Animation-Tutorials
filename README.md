@@ -1,7 +1,12 @@
 # 🍭🚀💗 Animation Tutorials
+
+[![Android Weekly #437](https://androidweekly.net/issues/issue-437/badge)](https://androidweekly.net/issues/issue-437)
+[![Kotlin Version](https://img.shields.io/badge/kotlin-1.4.0-blue.svg)](https://kotlinlang.org)
+[![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=21)
+
 Tutorials about animations in Android such as ObjectAnimators, ValueAnimators, translations,
 gradient animations, AnimationDrawables, AnimatedVectorDrawables with states, physics animations,
-fragment transitions and image to ViewPager transitions and more.
+fragment transitions, image to ViewPager transitions and more.
 
 ## Overview
 
@@ -16,9 +21,9 @@ fragment transitions and image to ViewPager transitions and more.
 | ----------|----------------| --------|
 | <img src="./screenshots/chapter2_7gradient.gif"/> | <img src="./screenshots/chapter2_8counter_textview.gif"/> | <img src="./screenshots/chapter2_9_counter_surfaceview.gif"/> |
 
-| Ch3-1 Physics | Ch3-2 Scale and Chained   | Ch3-3 Fling | Ch3-4 BNV+TabLayout Physics|
-| ----------|----------------| --------| --------|
-| <img src="./screenshots/chapter3_1physics_basics.gif"/> | <img src="./screenshots/chapter3_2scale_and_chain.gif"/> | <img src="./screenshots/chapter3_fling_animation.gif"/> | <img src="./screenshots/chapter3_4_bnv_tablayout_animation.gif"/> |
+| Ch3-1 Physics | Ch3-2 Scale and Chained   | Ch3-3 Fling | Ch3-4 BNV+TabLayout Physics| Ch3-5 Elastic Scale|
+| ----------|----------------| --------| --------| --------|
+| <img src="./screenshots/chapter3_1physics_basics.gif"/> | <img src="./screenshots/chapter3_2scale_and_chain.gif"/> | <img src="./screenshots/chapter3_3fling_animation.gif"/> | <img src="./screenshots/chapter3_4bnv_tablayout_animation.gif"/> | <img src="./screenshots/chapter3_5elastic_scale.gif"/> |
 
 <br>
 
@@ -32,9 +37,13 @@ fragment transitions and image to ViewPager transitions and more.
 * [Tutorial3-1Shared Transitions](https://github.com/SmartToolFactory/Animation-Tutorials/tree/master/Tutorial3-1Transitions)
 Tutorials about Shared Transitions from Activity to Activity, and from Fragment to Fragment
 
-| Ch1-2 RV Transition | Ch1-4 RV to VP2 Transition   | Ch2-3 Nav Components |
+| Ch1-2 RV Transition | Ch1-4 RV to VP2 Transition   | Ch2-5/1 Nav Components |
 | ----------|----------------| --------|
-| <img src="./screenshots/transition_chapter1_2.gif"/> | <img src="./screenshots/transition_chapter1_4.gif"/> | <img src="./screenshots/transition_chapter2_3.gif"/> |
+| <img src="./screenshots/transition_chapter1_2.gif"/> | <img src="./screenshots/transition_chapter1_4.gif"/> | <img src="./screenshots/transition_chapter2_5_1.gif"/> |
+
+|  Ch2-5/2 Nav Components | Ch2-5/3 Nav Components   | Ch2-6/1 Material Transitions |
+| ----------|----------------| --------|
+| <img src="./screenshots/transition_chapter2_5_2.gif"/> | <img src="./screenshots/transition_chapter2_5_3.gif"/> | <img src="./screenshots/transition_chapter2_6_1.gif"/> |
 
 
 ## Physics Based Animations
@@ -308,19 +317,18 @@ findNavController().navigate(direction, extras)
 * 🔥🔥🔥 With transitions, it's required for start and end values to be different from each other to call
 ```createAnimator``` method. 
 
-To make sure that it gets called, either set **captureStartValues**
-and **captureEndValues** manually, or in fragment transitioned to, create **setEnterSharedElementCallback**
+* To make sure that  **ENTER** or **RETURN** transitions start, either set **captureStartValues**
+and **captureEndValues** manually, or in destination fragment create **setEnterSharedElementCallback**
 and override **onSharedElementStart** and **onSharedElementEnd** methods and set properties of
-objects that are not shared in both fragments.
- 
- Without doing this enter or exit might not work because
-of ***Transition*** start and end point to same value.
+objects that are not shared transitions.
 
 #### Note: 
-🔥🔥🔥 In tutorial 2-4 and 2-5, having same background color for both fragments causing second fragment's enter transition(CircularReveal and Slide.BOTTOM) to not work
-So when using **Transitions** that extends ```Visiblity``` class such as Slide, or Fade be careful about background color
-Either set callback and set start and end properties for scene with
+🔥🔥🔥  In tutorial 2-4 and tutorial 2-5, having same background color for both fragments causing destination fragment's **ENTER TRANSITION(CircularReveal and Slide.BOTTOM)**, and REENTER(Explode) to NOT work.
+When using **Transitions** that extend ```Visiblity``` class such as Slide, or Fade be careful about background color. Having same background messes **enterTransition** for destination and **returnTransition** for source fragments.
 
+To prevent this use one of the solutions below:
+
+1-  Set callback and set start and end properties for starting and ending scenes with
 ```
         setEnterSharedElementCallback(object : SharedElementCallback() {
 
@@ -352,10 +360,61 @@ Either set callback and set start and end properties for scene with
     }
 ```
 
-or use **custom transitions** that extend either ```Transition``` or ```Visibility```
+2- Use **custom transitions** that extend either ```Transition``` or ```Visibility``` and force value changes.
+
+3- Use a separate view for the background, rather than on the root view because it is a  shared element. Otherwise it interferes with the window enter transition i.e. as it is resized for the shared element transition, many views are considered 'off-screen' so visibility transitions are not run.
+
+4- Set **transitionGroup=false.** on layout with background color. ```transitionGroup``` sets whether or not this ViewGroup should be treated as a single entity when doing an Activity transition. Typically, the elements inside a ViewGroup are each transitioned from the scene individually. The default for a ViewGroup is false **unless it has a background**.
+
+* ⚠️ With **EXIT** or **RETURN** transitions  ```captureEndValues``` is not called, because of this use a transition that extends ```Visibility``` for ```exitTransition``` and ```returnTransition``` to start,
+and be aware that Animator from ```onDisAppear``` is called while current transition is exit or return. 
+
+#### Summary
+* For ```enterTransition``` and ```reEnterTransition``` either check for background color change and set **transitionGroup** to false
+or use transition that extends ```Visibility``` with change from INVISIBLE to VISIBLE.
+
+⚠️ With ```reEnterTransition``` even though ```Explode```  does not work without solving background issue, most of
+the classes extend ```Transition``` or ```Visibility``` work fine
+
+* For ```exitTransition``` and ```returnTransition``` make sure that visibility goes from VISIBLE to INVISIBLE
+
+* If ```addTarget``` does not work use ```excludeTarget(view,false)```
+
+#### 🤩 Note: Breaker of chains — Transition Groups
+
+By default all views under a parent/ancestor with a background set (even transparent ones) will be automatically deemed a group. If you need to break them up like we here with a RecyclerView as the shared-root-white-backgrounded layout with transparent child Item views. You’ll need to set the **layout with the background** to **transitionGroup=false.**
+But on the other hand, since the Items are “background-less” themselves, to prevent an out-of-body experience you’ll need to do the opposite and set transitionGroup=true on the Item layouts for all the child views in that Item to move together.
+
+#### Material Transitions
+
+[MaterialContainerTransform](https://material.io/develop/android/theming/motion#container-transform)
+
+The container transform pattern is designed for transitions between UI elements that include a container. This pattern creates a visible connection between two UI elements.
+
+MaterialContainerTransform is a shared element transition. Unlike traditional Android shared elements, it is not designed around a singular piece of shared content, such as an image, to be moved between two scenes. Instead, the shared element here refers to the bounding container of a start View or ViewGroup (e.g. the entire row layout of an item in a list) transforming its size and shape into that of an end View or ViewGroup (e.g. the root ViewGroup of a full screen Fragment). These start and end container Views are the “shared element” of a container transform. While these containers are being transformed, their contents are swapped to create the transition.
+
+*Examples of the container transform:*
+
+
+* A card into a details page
+* A list item into a details page
+* A FAB into a details page
+* A search bar into expanded search
+
+[MaterialSharedAxis](https://material.io/develop/android/theming/motion#shared-axis)
+
+The shared axis pattern is used for transitions between UI elements that have a spatial or navigational relationship. This pattern uses a shared transformation on the x, y, or z axis to reinforce the relationship between elements.
+
+[MaterialElevationScale]()
+
+* MaterialFadeThrough
+
+
+* MaterialArcMotion
+
+
 
 ### Resources and References
-Wonderful and very helpful resources, check them out 🤩😍
 
 [CodeLab Property Animation](https://codelabs.developers.google.com/codelabs/advanced-android-kotlin-training-property-animation/#0)
 <br>
@@ -378,6 +437,12 @@ Wonderful and very helpful resources, check them out 🤩😍
 [Circular reveal animation between Fragments | by Gabor Novak | Medium](https://medium.com/@gabornovak/circular-reveal-animation-between-fragments-d8ed9011aec)
 <br>
 [Reveal Transition](https://halfthought.wordpress.com/2014/11/07/reveal-transition/)
+<br>
+[Motion-Material Design](https://material.io/develop/android/theming/motion)
+<br>
+[Material Components Android Examples](https://github.com/material-components/material-components-android-examples)
+<br>
+[Android — Inbox Material Transitions for RecyclerView](https://medium.com/workday-engineering/android-inbox-material-transitions-for-recyclerview-7ae3cb241aed)
 <br>
 [Plaid App](https://github.com/android/plaid)
 

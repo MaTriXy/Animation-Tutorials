@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavDirections
@@ -13,8 +12,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Explode
 import androidx.transition.Fade
-import androidx.transition.Transition
+import com.google.android.material.appbar.AppBarLayout
 import com.smarttoolfactory.tutorial3_1transitions.ImageData
 import com.smarttoolfactory.tutorial3_1transitions.R
 import com.smarttoolfactory.tutorial3_1transitions.adapter.SingleViewBinderListAdapter
@@ -25,7 +25,6 @@ import com.smarttoolfactory.tutorial3_1transitions.adapter.viewholder.HeaderView
 import com.smarttoolfactory.tutorial3_1transitions.adapter.viewholder.ItemBinder
 import com.smarttoolfactory.tutorial3_1transitions.adapter.viewholder.MagazineListViewViewBinder
 import com.smarttoolfactory.tutorial3_1transitions.databinding.ItemMagazineBinding
-import com.smarttoolfactory.tutorial3_1transitions.transition.TransitionXAdapter
 
 /*
     🔥‼️ Added transition id to MagazineModel because giving same resource id as transition name to multiple
@@ -34,8 +33,9 @@ import com.smarttoolfactory.tutorial3_1transitions.transition.TransitionXAdapter
 @Suppress("UNCHECKED_CAST")
 class Fragment2_5ToolbarList : Fragment() {
 
-    val dataList1 by lazy { getMagazineList(0) }
-    val dataList2 by lazy { getMagazineList(1) }
+    private val dataList1 by lazy { getMagazineList(0) }
+    private val dataList2 by lazy { getMagazineList(1) }
+    private val dataList3 by lazy { getMagazineList(2) }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +67,12 @@ class Fragment2_5ToolbarList : Fragment() {
                 submitList(listOf(HeaderModel("Second List")))
             }
 
+        val headerAdapter3 = SingleViewBinderListAdapter(headerBinder as ItemBinder)
+            .apply {
+                submitList(listOf(HeaderModel("Third List")))
+            }
+
+
         val magazineListViewBinder =
             MagazineListViewViewBinder { binding: ItemMagazineBinding, model: MagazineModel ->
                 goToDetailPage(binding, model)
@@ -81,13 +87,21 @@ class Fragment2_5ToolbarList : Fragment() {
                 submitList(listOf(MagazineListModel(dataList2)))
             }
 
+        val listAdapter3 = SingleViewBinderListAdapter(magazineListViewBinder as ItemBinder)
+            .apply {
+                submitList(listOf(MagazineListModel(dataList3)))
+            }
+
+
         // Create a ConcatAdapter to add adapters sequentially order in vertical orientation
         val concatAdapter =
             ConcatAdapter(
                 headerAdapter1,
                 listAdapter1,
                 headerAdapter2,
-                listAdapter2
+                listAdapter2,
+                headerAdapter3,
+                listAdapter3
             )
 
         recyclerView.apply {
@@ -99,10 +113,15 @@ class Fragment2_5ToolbarList : Fragment() {
         recyclerView.doOnPreDraw {
             startPostponedEnterTransition()
         }
-
     }
 
     private fun prepareTransitions(view: View) {
+
+        val appbar = view.findViewById<AppBarLayout>(R.id.appbar)
+
+//        allowEnterTransitionOverlap = false
+
+        val recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView)
 
         exitTransition =
             Fade(Fade.MODE_OUT)
@@ -111,46 +130,43 @@ class Fragment2_5ToolbarList : Fragment() {
                     addTarget(view)
                 }
 
-        (exitTransition as? Transition)?.addListener(object : TransitionXAdapter() {
+        /*
+            🔥 Explode does not work when android:transitionGroup="false" is not set,
+            or visibility hasn't changed for Enter or ReEnter transitions. But most of the
+            Transitions and Visibility work with reEnter flawlessly, but some don't
 
-            override fun onTransitionStart(transition: Transition) {
-                super.onTransitionStart(transition)
-                Toast.makeText(
-                    requireContext(),
-                    "EXIT onTransitionStart()",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-            override fun onTransitionEnd(transition: Transition) {
-
-                super.onTransitionEnd(transition)
-                Toast.makeText(
-                    requireContext(),
-                    "EXIT onTransitionEnd time: $animationDuration",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-
-
+            Either set android:transitionGroup="false", or use ForcedExplode
+         */
         reenterTransition =
-            Fade(Fade.MODE_IN)
+            Explode()
                 .apply {
+                    startDelay = 400
                     duration = 500
+                    excludeTarget(view, true)
+                    excludeTarget(appbar, true)
+                    excludeTarget(recyclerView, false)
                 }
     }
 
     private fun goToDetailPage(binding: ItemMagazineBinding, magazineModel: MagazineModel) {
 
-        val direction: NavDirections = if (magazineModel.transitionId == 0) {
-            Fragment2_5ToolbarListDirections.actionFragment25ToolbarListToFragment25Details(
-                magazineModel
-            )
-        } else {
-            Fragment2_5ToolbarListDirections.actionFragment25ToolbarListToFragment24MagazineDetail(
-                magazineModel
-            )
+        val direction: NavDirections = when (magazineModel.transitionId) {
+            0 -> {
+                Fragment2_5ToolbarListDirections.actionFragment25ToolbarListToFragment25Details(
+                    magazineModel
+                )
+            }
+            1 -> {
+                Fragment2_5ToolbarListDirections.actionFragment25ToolbarListToFragment24MagazineDetail(
+                    magazineModel
+                )
+            }
+            else -> {
+                Fragment2_5ToolbarListDirections
+                    .actionFragment25ToolbarListToFragment25ToolbarDetailAlt2(
+                        magazineModel
+                    )
+            }
         }
 
         val extras = FragmentNavigatorExtras(
@@ -179,7 +195,7 @@ class Fragment2_5ToolbarList : Fragment() {
             magazineList.add(magazineModel)
         }
 
-//        magazineList.shuffle()
+        magazineList.shuffle()
 
         return magazineList
 

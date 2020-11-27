@@ -10,7 +10,7 @@ class Activity2_5FragmentTransitionsWithToolbar : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity2_5nav_shared_transition)
+        setContentView(R.layout.activity2_5toolbar_transition_propagation)
         title = getString(R.string.activity2_5)
 
     }

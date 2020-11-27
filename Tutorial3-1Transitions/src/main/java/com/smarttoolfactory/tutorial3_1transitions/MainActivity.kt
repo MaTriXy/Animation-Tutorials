@@ -96,6 +96,13 @@ class MainActivity : AppCompatActivity(), BaseAdapter.OnRecyclerViewItemClickLis
 
         activityClassModels.add(
             ActivityClassModel(
+                Activity1_5RecyclerViewTransition2::class.java,
+                getString(R.string.activity1_5)
+            )
+        )
+
+        activityClassModels.add(
+            ActivityClassModel(
                 Activity2_1FragmentTransitionsBasics::class.java,
                 getString(R.string.activity2_1)
             )
@@ -126,6 +133,13 @@ class MainActivity : AppCompatActivity(), BaseAdapter.OnRecyclerViewItemClickLis
             ActivityClassModel(
                 Activity2_5FragmentTransitionsWithToolbar::class.java,
                 getString(R.string.activity2_5)
+            )
+        )
+
+        activityClassModels.add(
+            ActivityClassModel(
+                Activity2_6FragmentExpandCollapseTransitions::class.java,
+                getString(R.string.activity2_6)
             )
         )
     }
